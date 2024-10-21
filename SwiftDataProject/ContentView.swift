@@ -11,24 +11,33 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) var modelContext
-    @Query(filter: #Predicate<User> { user in
-        user.name.localizedStandardContains("R"){
-            if user.city == "CDMX"{
-                return true
-            } else {
-                return false
-            }
-        } else {
-            return false
-        }
-    }, sort: \User.name) var users: [User]
+    @State private var showingUpcomingOnly = false
+    
+    @State private var sortOrder = [
+        SortDescriptor(\User.name),
+        SortDescriptor(\User.joinDate),
+        
+    ]
+//    @Query(filter: #Predicate<User> { user in
+//        if user.name.localizedStandardContains("R"){
+//            if user.city == "CDMX"{
+//                return true
+//            } else {
+//                return false
+//            }
+//        } else {
+//            return false
+//        }
+//    }, sort: \User.name) var users: [User]
     
     var body: some View {
         NavigationStack {
-            List(users) { user in
-                Text(user.name)
-            }
-            .navigationTitle("Users")
+            UsersView(minimumJoinDate: showingUpcomingOnly ? .now : .distantPast, sortOtder: sortOrder)
+                .navigationTitle("Users")
+//            List(users) { user in
+//                Text(user.name)
+//            }
+//
             .toolbar {
                 Button("Add Samples", systemImage: "plus") {
                     try? modelContext.delete(model: User.self)
@@ -43,6 +52,25 @@ struct ContentView: View {
                     modelContext.insert(third)
                     modelContext.insert(fourth)
                 }
+                Button(showingUpcomingOnly ? "Show Everyone" : "Show Upcoming"){
+                    showingUpcomingOnly.toggle()
+                }
+                Menu("Sort", systemImage: "arrow.up.arrow.down") {
+                    Picker("Sort", selection: $sortOrder){
+                        Text("Sort by Name")
+                            .tag([
+                                SortDescriptor(\User.name),
+                                SortDescriptor(\User.joinDate),
+                            ])
+                        Text("Sort by Join Date")
+                            .tag([
+                                SortDescriptor(\User.joinDate),
+                                SortDescriptor(\User.name),
+                            ])
+                        
+                    }
+                }
+                
             }
         }
     }
